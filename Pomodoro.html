@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+    <style>
+
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk';
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            color: white;
+            text-align: center;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .mode-buttons button {
+            padding: 0.6rem 1.5rem;
+            border: 2px solid white;
+            border-radius: 18px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .mode-buttons button.active {
+            background: #7432FF;
+            color: white;
+            border: none;
+        }
+
+        .timer {
+            font-size: 10.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            position: relative;
+            display: inline-block;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .control-buttons button {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        #start {
+            padding: 0.6rem 1.5rem;
+            border: 1px solid white;
+            border-radius: 18px;
+            background: white;
+            color: black;
+            cursor: pointer;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        #reset, #settings {
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            color: white;
+            border: none !important;
+        }
+
+        #reset svg, #settings svg {
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #7432FF;
+            color: white;
+            border: 2px solid #7432FF;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spin {
+            animation: spin 0.7s ease-out;
+        }
+
+        /* Modal Styles */
+		
+		h3, label {
+			color: white;
+		}
+		
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+        }
+
+        .settings-modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 600px;
+            height: 100%;
+            background: #1A1A1A;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+            display: flex;
+        }
+
+        .settings-modal.active .modal-content {
+            transform: translateX(0);
+        }
+
+        .modal-sidebar {
+            width: 150px;
+            background: #2A2A2A;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sidebar-btn {
+            background: none;
+            border: none;
+            color: white;
+            padding: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-btn.active {
+            background: #7432FF;
+        }
+
+        .modal-main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .category-content {
+            display: none;
+        }
+
+        .category-content.active {
+            display: block;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        select, input {
+            background: #333;
+            border: 2px solid #444;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            width: 200px;
+        }
+
+        .timer-inputs div {
+            margin: 1rem 0;
+        }
+
+        .timer-inputs label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        #start:hover {
+            background: none;
+            color: white;
+        }
+
+        #start:focus {
+            background-color: black;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mode-buttons">
+            <button class="active">Focus</button>
+            <button>Short Break</button>
+            <button>Long Break</button>
+        </div>
+
+        <div class="timer">25:00</div>
+
+        <div class="control-buttons">
+            <button id="start">Start</button>
+            <button id="reset">
+                <svg width="46" height="46" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="enable-background:new 0 0 36 40" viewBox="0 0 36 40">
+                    <path d="M30.32 20.03v.54c0 3.3-1.19 6.09-3.59 8.4-2.4 2.31-5.3 3.46-8.73 3.46s-6.33-1.15-8.73-3.46c-2.4-2.31-3.59-5.1-3.59-8.4 0-3.31 1.16-6.1 3.49-8.41 2.24-2.22 4.98-3.37 8.25-3.45l-2.56 2.47 2.54 2.51 7.1-6.84L17.4 0l-2.55 2.46 2.79 2.69c-2.08.04-4.04.44-5.88 1.2-1.94.8-3.63 1.9-5.09 3.3-1.45 1.4-2.59 3.04-3.42 4.91C2.41 16.42 2 18.43 2 20.57c0 2.14.41 4.15 1.25 6.03.83 1.87 1.97 3.51 3.42 4.91 1.45 1.4 3.15 2.5 5.09 3.3C13.7 35.6 15.79 36 18 36s4.3-.4 6.24-1.2c1.94-.8 3.63-1.9 5.09-3.3 1.45-1.4 2.6-3.04 3.42-4.91.83-1.88 1.25-3.89 1.25-6.03v-.54h-3.68z" style="fill-rule:evenodd;clip-rule:evenodd;" fill="#fff"></path>
+                </svg>
+            </button>
+            <button id="settings">
+                <svg width="36" height="36" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.983 28.269a7.27 7.27 0 1 0-7.253-7.265 7.277 7.277 0 0 0 7.253 7.265zM5.758 15.666l.714-1.73c-2.449-5.65-2.29-5.817-1.81-6.3l3.129-3.12.31-.27h.362c.193 0 .76 0 5.518 2.201l1.752-.722C17.997 0 18.227 0 18.9 0h4.405c.664 0 .92 0 3.016 5.746l1.743.722c3.213-1.386 5.099-2.1 5.607-2.1h.42l3.36 3.36c.516.525.697.697-1.894 6.258l.714 1.726c5.728 2.26 5.728 2.478 5.728 3.188v4.402c0 .693 0 .936-5.75 3.04l-.713 1.723c2.448 5.649 2.285 5.817 1.81 6.3l-3.129 3.124-.31.274h-.366c-.189 0-.752 0-5.515-2.205l-1.747.726C24.015 42 23.784 42 23.1 42h-4.397c-.676 0-.915 0-3.02-5.741l-1.751-.722c-3.213 1.386-5.09 2.1-5.599 2.1h-.42l-3.393-3.39c-.483-.495-.651-.667 1.923-6.207l-.71-1.727C0 24.028 0 23.79 0 23.1V18.7c0-.693 0-.937 5.758-3.033z" fill="#fff" fill-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal">
+        <div class="modal-content">
+            <div class="modal-sidebar">
+                <button class="sidebar-btn active" data-category="general">General</button>
+                <button class="sidebar-btn" data-category="timers">Timers</button>
+                <button class="sidebar-btn" data-category="sounds">Sounds</button>
+            </div>
+            
+            <div class="modal-main">
+                <!-- General Tab Content -->
+                <div class="category-content general active">
+                    <h3>Theme</h3>
+                    <select class="theme-select">
+                        <option value="obsidian">Obsidian</option>
+						<option value="monstera">Monstera</option>
+						<option value="tokyo">Tokyo</option>
+                    </select>
+                </div>
+
+                <!-- Timers Tab Content -->
+                <div class="category-content timers">
+                    <h3>Timer Durations</h3>
+                    <div class="timer-inputs">
+                        <div>
+                            <label>Focus</label>
+                            <input type="number" class="duration-input" data-timer="focus" value="25" min="0.1" step="0.1">
+                        </div>
+                        <div>
+                            <label>Short Break</label>
+                            <input type="number" class="duration-input" data-timer="short" value="5" min="0.1" step="0.1">
+                        </div>
+                        <div>
+                            <label>Long Break</label>
+                            <input type="number" class="duration-input" data-timer="long" value="15" min="0.1" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sounds Tab Content -->
+                <div class="category-content sounds">
+                    <h3>Alert Sound</h3>
+                    <select class="sound-select">
+                        <option value="bell">Bell</option>
+                        <option value="chime">Chime</option>
+                        <option value="birds">Birds</option>
+                        <option value="lofi">Lofi</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="close-modal">&times;</button>
+        </div>
+    </div>
+    <audio id="timer-sound" src=""></audio>
+    <script>
+
+        // Utility function to convert decimal minutes to MM:SS format
+function convertDecimalToTime(decimal) {
+    const minutes = Math.floor(decimal);
+    const seconds = Math.round((decimal % 1) * 60);
+    return { minutes, seconds };
+}
+
+// Timer Variables
+let timerInterval;
+let timeRemaining = 0; // Time remaining in seconds
+let isRunning = false;
+
+// Sound Configuration
+const soundSelect = document.querySelector('.sound-select');
+const timerSound = document.getElementById('timer-sound');
+const sounds = {
+    'bell': 'https://flocus.com/minimalist-pomodoro-timer/a2b96f39601029939b69.mp3',
+    'chime': 'https://flocus.com/minimalist-pomodoro-timer/31e0048360fd4d397735.mp3',
+    'birds': 'https://flocus.com/minimalist-pomodoro-timer/f371867fd7c7e3728583.mp3',
+    'lofi': 'https://flocus.com/minimalist-pomodoro-timer/2c511093a1edaedef710.mp3'
+};
+
+// Load saved sound
+const savedSound = localStorage.getItem('selectedSound') || 'bell';
+soundSelect.value = savedSound;
+timerSound.src = sounds[savedSound];
+
+// Function to play the timer completion sound
+function playTimerSound() {
+    if (timerSound.src) {
+        timerSound.currentTime = 0; // Rewind to start
+        timerSound.play();
+    }
+}
+
+// Function to update the timer display
+function updateTimerDisplay() {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    document.querySelector('.timer').textContent = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+// Function to start the timer
+function startTimer() {
+    if (isRunning) return; // Prevent multiple intervals
+
+    isRunning = true;
+    timerInterval = setInterval(() => {
+        if (timeRemaining > 0) {
+            timeRemaining--;
+            updateTimerDisplay();
+        } else {
+            clearInterval(timerInterval);
+            isRunning = false;
+            playTimerSound(); // Play sound when timer completes
+            /*alert('Timer completed!');*/
+            resetTimer(); // Reset to initial duration
+            startButton.textContent = 'Start'; // Reset button text
+        }
+    }, 1000);
+}
+
+// Function to pause the timer
+function pauseTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+}
+
+// Function to reset the timer
+function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+
+    // Get the active mode and its duration
+    const activeMode = document.querySelector('.mode-buttons .active').textContent;
+    const modeMap = {
+        'Focus': 'focus',
+        'Short Break': 'short',
+        'Long Break': 'long'
+    };
+    const modeKey = modeMap[activeMode];
+    const savedValue = parseFloat(localStorage.getItem(`timer-${modeKey}`)) ||
+        (modeKey === 'focus' ? 25 :
+         modeKey === 'short' ? 5 : 15);
+
+    // Convert saved value to seconds
+    timeRemaining = Math.round(savedValue * 60);
+    updateTimerDisplay();
+}
+
+// Reset Button Animation
+const resetButton = document.getElementById('reset');
+const resetIcon = resetButton.querySelector('svg');
+
+resetButton.addEventListener('click', () => {
+    resetTimer();
+    startButton.textContent = 'Start';
+    resetIcon.classList.add('spin');
+    resetIcon.addEventListener('animationend', () => {
+        resetIcon.classList.remove('spin');
+    }, { once: true });
+});
+
+// Start Button Functionality
+const startButton = document.getElementById('start');
+startButton.addEventListener('click', () => {
+    if (!isRunning) {
+        startTimer();
+        startButton.textContent = 'Pause';
+    } else {
+        pauseTimer();
+        startButton.textContent = 'Resume';
+    }
+});
+
+// Modal Functionality
+const settingsButton = document.getElementById('settings');
+const settingsModal = document.querySelector('.settings-modal');
+const closeModal = document.querySelector('.close-modal');
+
+settingsButton.addEventListener('click', () => {
+    settingsModal.classList.add('active');
+});
+
+closeModal.addEventListener('click', () => {
+    settingsModal.classList.remove('active');
+});
+
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+        settingsModal.classList.remove('active');
+    }
+});
+
+// Tab Switching
+const sidebarBtns = document.querySelectorAll('.sidebar-btn');
+sidebarBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelector('.sidebar-btn.active').classList.remove('active');
+        btn.classList.add('active');
+        const category = btn.dataset.category;
+        document.querySelector('.category-content.active').classList.remove('active');
+        document.querySelector(`.${category}`).classList.add('active');
+    });
+});
+
+// Theme Changer
+const themeSelect = document.querySelector('.theme-select');
+const themes = {
+    'obsidian': 'url("https://cdn.artstation.com/p/thumbnails/000/231/545/thumb.jpg")',
+    'leaves': 'url("https://images.unsplash.com/photo-1612838320302-4b3b3b3b3b3b")',
+    'mountains': 'url("https://images.unsplash.com/photo-1612838320302-4b3b3b3b3b3b")',
+    'city': 'url("https://images.unsplash.com/photo-1612838320302-4b3b3b3b3b3b")'
+};
+// Load saved theme
+const savedTheme = localStorage.getItem('selectedTheme') || 'obsidian';
+document.body.style.backgroundImage = themes[savedTheme];
+themeSelect.value = savedTheme;
+
+themeSelect.addEventListener('change', (e) => {
+    const selectedTheme = e.target.value;
+    document.body.style.backgroundImage = themes[selectedTheme];
+    localStorage.setItem('selectedTheme', selectedTheme);
+});
+
+// Timer Duration Storage
+const durationInputs = document.querySelectorAll('.duration-input');
+
+// Load saved durations
+['focus', 'short', 'long'].forEach(timerType => {
+    const savedValue = localStorage.getItem(`timer-${timerType}`);
+    if (savedValue) {
+        const input = document.querySelector(`[data-timer="${timerType}"]`);
+        input.value = savedValue;
+    }
+});
+
+durationInputs.forEach(input => {
+    input.addEventListener('change', (e) => {
+        const timerType = e.target.dataset.timer;
+        const value = parseFloat(e.target.value);
+
+        // Validate input
+        if (isNaN(value) || value < 0) {
+            alert('Please enter a valid positive number');
+            e.target.value = localStorage.getItem(`timer-${timerType}`) || '';
+            return;
+        }
+
+        // Save original decimal value
+        localStorage.setItem(`timer-${timerType}`, value);
+
+        // Convert to minutes and seconds
+        const { minutes, seconds } = convertDecimalToTime(value);
+        const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        // Update display if active
+        const activeMode = document.querySelector('.mode-buttons .active').textContent;
+        const modeMap = {
+            'Focus': 'focus',
+            'Short Break': 'short',
+            'Long Break': 'long'
+        };
+
+        if (timerType === modeMap[activeMode]) {
+            document.querySelector('.timer').textContent = formattedTime;
+            resetTimer(); // Reset timer to new duration
+        }
+    });
+});
+
+// Sound Selector
+soundSelect.addEventListener('change', (e) => {
+    const selectedSound = e.target.value;
+    localStorage.setItem('selectedSound', selectedSound);
+    timerSound.src = sounds[selectedSound]; // Update sound source
+});
+
+// Mode Switching
+document.querySelectorAll('.mode-buttons button').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelector('.mode-buttons .active').classList.remove('active');
+        this.classList.add('active');
+        resetTimer(); // Reset timer for the new mode
+        startButton.textContent = 'Start'; // Reset button text
+    });
+});
+
+// Initialize timer on page load
+resetTimer();
+
+    </script>
+</body>
+</html>
